@@ -16,6 +16,58 @@ DEPARTURES_LIMIT = 5
 DEPARTURES_LIMIT_MAX = 10
 
 
+# Common helpers
+
+
+def keyboard_select_stop(stops: list[vvo.Point], tag: QueryTag):
+    """Create keyboard for stop selection"""
+    return [
+        [
+            InlineKeyboardButton(
+                stop.name
+                + (
+                    f" ({stop.distance} m)"
+                    if stop.distance
+                    else (f" ({stop.place})" if stop.place else "")
+                ),
+                callback_data=(tag, (stop.id,)),
+            )
+        ]
+        for stop in stops
+    ]
+
+
+def handle_stop_message(update: Update, tag=QueryTag.STOP_SELECTED):
+    """Handle a stop message (name or location)
+
+    Args:
+        update: Telegram update object
+        tag: QueryTag to set for multiple selection callback
+    """
+    if update.message.location:
+        location = update.message.location
+        query = (location.longitude, location.latitude)
+    else:
+        query = update.message.text.strip()
+    response = vvo.find_stops(query, shortcuts=True, limit=3)
+    if len(response.points) == 0:
+        update.effective_message.reply_text(
+            quote=True, text="Entschuldigung 😔, aber ich konnte keine Haltestellen finden."
+        )
+        return False, None
+    elif len(response.points) > 1:
+        update.effective_message.reply_text(
+            quote=True,
+            text="Ich habe mehrere Haltestellen gefunden, bitte wähle eine aus:",
+            reply_markup=InlineKeyboardMarkup(keyboard_select_stop(response.points, tag)),
+        )
+        return True, None
+    else:
+        return True, response.points[0]
+
+
+####################################################################
+# Main logic
 def departures(stop: vvo.Point, favorites, more=False, time=None):
     """Helper to create message of departures and keyboard markup
 
@@ -74,21 +126,8 @@ def departures(stop: vvo.Point, favorites, more=False, time=None):
     return message, keyboard
 
 
-def keyboard_select_stop(stops: list[vvo.Point]):
-    """Create keyboard for stop selection"""
-    return [
-        [
-            InlineKeyboardButton(
-                stop.name
-                + (
-                    f" ({stop.distance} m)"
-                    if stop.distance
-                    else (f" ({stop.place})" if stop.place else "")
-                )
-            )
-        ]
-        for stop in stops
-    ]
+##########################################################
+# Callbacks
 
 
 def cb_departures_query(update: Update, context: CallbackContext, stop=None):
@@ -102,34 +141,15 @@ def cb_departures_query(update: Update, context: CallbackContext, stop=None):
         time=time,
     )
     update.effective_chat.send_message(
-        message,
-        parse_mode=ParseMode.MARKDOWN_V2,
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        message, parse_mode=ParseMode.MARKDOWN_V2, reply_markup=InlineKeyboardMarkup(keyboard)
     )
+
 
 def cb_departures_location(update: Update, context: CallbackContext):
     """Find departures by location or message"""
-    if update.message.location:
-        location = update.message.location
-        query = (location.longitude, location.latitude)
-    else:
-        query = update.message.text.strip()
-    response = vvo.find_stops(query, shortcuts=True, limit=3)
-    if len(response.points) == 0:
-        update.effective_message.reply_text(
-            quote=True,
-            text="Entschuldigung 😔, aber ich konnte keine Haltestellen finden."
-        )
-    elif len(response.points) > 1:
-        update.effective_message.reply_text(
-            quote=True,
-            text="Ich habe mehrere Haltestellen gefunden, bitte wähle eine aus:",
-            reply_markup=InlineKeyboardMarkup(keyboard_select_stop(response.points)),
-        )
-    else:
-        message, keyboard = departures(
-            response.points[0], favorites=context.user_data.get("favorites", [])
-        )
+    success, point = handle_stop_message(update)
+    if success and point:
+        message, keyboard = departures(point, favorites=context.user_data.get("favorites", []))
         update.effective_message.reply_markdown_v2(
             message,
             quote=True,

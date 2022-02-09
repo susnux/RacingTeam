@@ -1,17 +1,20 @@
 import vvo
 
-from enum import Enum
+from enum import IntEnum
 from typing import Iterable, Optional, Type, Union
 from telegram import Update
 
 
-class QueryTag(Enum):
+class QueryTag(IntEnum):
     STOP_SELECTED = 1
     STOP_LOCATION = 2
     STOP_FAVORITE = 3
 
     DEPARTURE_LATER = 10
     DEPARTURE_MORE = 11
+
+    ROUTE_SELECTED_START = 20
+    ROUTE_SELECTED_DEST = 21
 
 
 def get_data(update: Update) -> tuple[QueryTag, Optional[tuple]]:

@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import json
-import traceback
+import html
 import logging
-from cgitb import html
+import traceback
 from telegram import ParseMode, Update
 from telegram.ext import (
     CallbackContext,
@@ -59,10 +59,10 @@ def error_handler(update: object, context: CallbackContext) -> None:
 
 def init():
     dispatcher = updater.dispatcher
-    from . import departures  # , route
+    from . import departures, route
 
     dispatcher.add_handler(CommandHandler("start", start))
-    # dispatcher.add_handler(route.handler)
+    dispatcher.add_handler(route.handler)
     # Put departure handlers into group 1 to prevent issues with route handlers
     [dispatcher.add_handler(handler, 1) for handler in departures.handlers]
 

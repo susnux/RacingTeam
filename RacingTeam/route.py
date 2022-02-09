@@ -138,7 +138,7 @@ def cb_route_stop(update: Update, context: CallbackContext):
         route["start"] = point
         if isinstance(point, vvo.Point):
             update.effective_message.reply_text(
-                "Ok, schick mir jetzt das Ziel (oder einen Standort).", quote=True
+                "Ok, schick mir jetzt das Ziel (oder einen Standort📍).", quote=True
             )
             raise DispatcherHandlerStop(QUERY_DEST)
         raise DispatcherHandlerStop(QUERY_START)
@@ -152,14 +152,14 @@ def cb_route_command(update: Update, context: CallbackContext):
     def query(name: str):
         resp = vvo.find_stops(name, shortcuts=True, limit=3)
         if not resp.ok or len(resp.points) == 0:
-            error(f"Leider konnte ich keine Haltestelle für `{name}` finden.")
+            error(f"Leider konnte ich keine Haltestelle für `{name}` finden 😔")
         return resp.points
 
     # If no args, simply echo and next state
     if not context.args:
         update.message.reply_text(
             "Ich suche dir eine Verbindung zwischen zwei Haltestellen.\n"
-            "Schick mir jetzt bitte die erste (oder einen Standort).",
+            "Schick mir jetzt bitte die Erste (oder einen Standort📍).",
             quote=True,
         )
         return QUERY_START
@@ -194,7 +194,7 @@ def cb_route_command(update: Update, context: CallbackContext):
                 msg += " Bitte wähle nun das Ziel aus."
                 kb = keyboard_select_stop(end, QueryTag.ROUTE_SELECTED_DEST)
             else:
-                msg += " Schick mir jetzt bitte das Ziel (oder einen Standort)."
+                msg += " Schick mir jetzt bitte das Ziel (oder einen Standort📍)."
             update.effective_message.reply_markdown(
                 msg, reply_markup=InlineKeyboardMarkup(kb), quote=True
             )
@@ -204,7 +204,7 @@ def cb_route_command(update: Update, context: CallbackContext):
             msg = f"Ok das Ziel ist `{end[0].name}`. Bitte wähle noch einen Start aus."
             kb = keyboard_select_stop(start, QueryTag.ROUTE_SELECTED_START)
         else:
-            msg = "Schick mir jetzt bitte den Start (oder einen Standort)."
+            msg = "Schick mir jetzt bitte den Start (oder einen Standort📍)."
         update.message.reply_markdown(msg, reply_markup=InlineKeyboardMarkup(kb), quote=True)
         return QUERY_START
 

@@ -58,8 +58,8 @@ def routes(start, end) -> tuple[str, Optional[list]]:
 
     kb = [
         [
-            InlineKeyboardButton("Start", callback_data=(QueryTag.STOP_LOCATION, (start.id,))),
-            InlineKeyboardButton("Ziel", callback_data=(QueryTag.STOP_LOCATION, (end.id,))),
+            InlineKeyboardButton("Start 📍", callback_data=(QueryTag.STOP_LOCATION, (start.id,))),
+            InlineKeyboardButton("Ziel 📍", callback_data=(QueryTag.STOP_LOCATION, (end.id,))),
         ]
     ]
     message = f"Verbindungen `{resp.routes[0].partial_routes[0].stops[0].name}` 👉 `{resp.routes[0].partial_routes[-1].stops[-1].name}`"
@@ -88,6 +88,8 @@ def routes(start, end) -> tuple[str, Optional[list]]:
 
 def cb_query_select(update: Update, context: CallbackContext):
     tag, stop, data = get_stop_data(update)
+    update.effective_message.edit_reply_markup()
+
     route = context.chat_data.setdefault("route", {})
     if tag == QueryTag.ROUTE_SELECTED_START:
         route["start"] = stop
@@ -109,13 +111,37 @@ def cb_query_select(update: Update, context: CallbackContext):
     update.effective_message.reply_markdown(
         text=message, quote=True, reply_markup=InlineKeyboardMarkup(kb) if kb else None
     )
-    return state
+    raise DispatcherHandlerStop(state)
 
 
 def cb_route_stop(update: Update, context: CallbackContext):
     route = context.chat_data.setdefault("route", {})
-    #    tag = QueryTag.ROUTE_SELECTED_START if route[]
-    success, point = handle_stop_message(update)
+    is_end = "start" in route and isinstance(route["start"], vvo.Point)
+
+    success, point = handle_stop_message(
+        update, QueryTag.ROUTE_SELECTED_DEST if is_end else QueryTag.ROUTE_SELECTED_START
+    )
+    if not success:
+        raise DispatcherHandlerStop(ConversationHandler.END)
+
+    if is_end:
+        route["end"] = point
+        if isinstance(point, vvo.Point):
+            is_typing(update)
+            text, kb = routes(route["start"], route["end"])
+            update.effective_message.reply_markdown(
+                text, reply_markup=InlineKeyboardMarkup(kb), quote=True
+            )
+            raise DispatcherHandlerStop(ConversationHandler.END)
+        raise DispatcherHandlerStop(QUERY_DEST)
+    else:
+        route["start"] = point
+        if isinstance(point, vvo.Point):
+            update.effective_message.reply_text(
+                "Ok, schick mir jetzt das Ziel (oder einen Standort).", quote=True
+            )
+            raise DispatcherHandlerStop(QUERY_DEST)
+        raise DispatcherHandlerStop(QUERY_START)
 
 
 def cb_route_command(update: Update, context: CallbackContext):
@@ -193,7 +219,7 @@ handler = ConversationHandler(
     states={
         QUERY_START: [
             MessageHandler(
-                Filters.location | (Filters.text & (~Filters.command)), callback=cb_query_select
+                Filters.location | (Filters.text & (~Filters.command)), callback=cb_route_stop
             ),
             CallbackQueryHandler(
                 callback=cb_query_select,
@@ -202,7 +228,7 @@ handler = ConversationHandler(
         ],
         QUERY_DEST: [
             MessageHandler(
-                Filters.location | (Filters.text & (~Filters.command)), callback=cb_query_select
+                Filters.location | (Filters.text & (~Filters.command)), callback=cb_route_stop
             ),
             CallbackQueryHandler(
                 callback=cb_query_select,

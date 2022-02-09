@@ -56,12 +56,44 @@ def error_handler(update: object, context: CallbackContext) -> None:
         "Entschuldigung irgendetwas ist schiefgelaufen, probier es noch einmal."
     )
 
+def help(update: Update, context: CallbackContext):
+    update.effective_message.reply_markdown(
+        quote=True,
+        text="Ich versuche dir Auskunft über aktuelle Fahrpläne, Abfahrten und Verbindungen zu geben.\n"
+        "\n"
+        "*Abfahrten*\n"
+        "Für Abfahrten schick mir einfach den Namen der Haltestelle oder einen Standort📍.\n"
+        "\n"
+        "*Verbindungssuche*\n"
+        "/route `START ZIEL`\n"
+        "/route `START`\n"
+        "/route\n"
+        "Ich versuche dir eine Verbindung zwischen _START_ und _ZIEL_ zu finden, "
+        "du kannst auch nur einen Start oder auch gar nichts angeben, "
+        "dann frage ich dich später nach einem Ziel / Start und Ziel. "
+        "Natürlich kannst du mir dann auch für das Ziel einen Standort📍 schicken.\n"
+        "\n"
+        "*Favoriten*\n"
+        "Du kannst Haltestellen, bei der Abfahrtssuche als Favoriten⭐️ hinzufügen."
+        "Mit /fav zeige ich dir deine gespeicherten Haltestellen dann an.\n"
+        "\n"
+        "*Sonstiges*\n"
+        "/cancel\n"
+        "Brich einen anderen Befehl ab.\n"
+        "\n"
+        "*Hilfe*\n"
+        "/help\n"
+        "Ich schicke dir diese Nachricht 😉\n"
+        "\n"
+    )
+
 
 def init():
     dispatcher = updater.dispatcher
     from . import departures, route
 
     dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("help", help))
     dispatcher.add_handler(route.handler)
     # Put departure handlers into group 1 to prevent issues with route handlers
     [dispatcher.add_handler(handler, 1) for handler in departures.handlers]

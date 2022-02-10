@@ -155,6 +155,9 @@ def cb_route_command(update: Update, context: CallbackContext):
             error(f"Leider konnte ich keine Haltestelle für `{name}` finden 😔")
         return resp.points
 
+    # Clear old data if re-entered the command conversation
+    context.chat_data.setdefault("route", {})
+
     # If no args, simply echo and next state
     if not context.args:
         update.message.reply_text(

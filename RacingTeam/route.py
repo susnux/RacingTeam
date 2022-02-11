@@ -32,6 +32,8 @@ def routes(start, end) -> tuple[str, Optional[list]]:
     def map_type(vehicle: vvo.Vehicle):
         if vehicle.type == vvo.TransportationType.FOOTPATH:
             return "➡️", "Fußweg", ""
+        elif vehicle.type == vvo.TransportationType.STAY:
+            return "🔄", "Auf Verbindung warten", ""
         elif (
             vehicle.type == vvo.TransportationType.STAIRWAY_UP
             or vehicle.type == vvo.TransportationType.RAMP_UP

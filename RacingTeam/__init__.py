@@ -17,7 +17,7 @@ logger = logging.getLogger()
 
 updater = Updater(
     token=BOT_TOKEN,
-    persistence=PicklePersistence(filename='telegram_data.pkl'),
+    persistence=PicklePersistence(filename="telegram_data.pkl"),
     use_context=True,
     arbitrary_callback_data=True,
 )
@@ -58,6 +58,7 @@ def error_handler(update: object, context: CallbackContext) -> None:
         "Entschuldigung irgendetwas ist schiefgelaufen, probier es noch einmal."
     )
 
+
 def help(update: Update, context: CallbackContext):
     update.effective_message.reply_markdown(
         quote=True,
@@ -86,7 +87,7 @@ def help(update: Update, context: CallbackContext):
         "*Hilfe*\n"
         "/help\n"
         "Ich schicke dir diese Nachricht 😉\n"
-        "\n"
+        "\n",
     )
 
 

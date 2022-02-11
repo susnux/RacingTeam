@@ -7,6 +7,7 @@ from telegram import ParseMode, Update
 from telegram.ext import (
     CallbackContext,
     CommandHandler,
+    PicklePersistence,
     Updater,
 )
 
@@ -16,6 +17,7 @@ logger = logging.getLogger()
 
 updater = Updater(
     token=BOT_TOKEN,
+    persistence=PicklePersistence(filename='telegram_data.pkl'),
     use_context=True,
     arbitrary_callback_data=True,
 )

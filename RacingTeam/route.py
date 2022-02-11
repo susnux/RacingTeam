@@ -158,7 +158,7 @@ def cb_route_command(update: Update, context: CallbackContext):
         return resp.points
 
     # Clear old data if re-entered the command conversation
-    context.chat_data.setdefault("route", {})
+    context.chat_data["route"] = {}
 
     # If no args, simply echo and next state
     if not context.args:

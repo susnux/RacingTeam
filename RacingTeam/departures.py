@@ -85,13 +85,13 @@ def departures(stop: vvo.Point, favorites, more=False, time=None):
     response.more
     message = (
         f"Abfahrten für *{response.name}*"
-        + (f" \({response.place}\)" if response.place and response.place != "Dresden" else "")
-        + (f" _\[{stop.shortcut}\]_\n" if stop.shortcut else "\n")
+        + (f" ({response.place})" if response.place and response.place != "Dresden" else "")
+        + (f" _[{stop.shortcut}]_\n" if stop.shortcut else "\n")
     )
     pad_line = max([len(d.line_name) for d in response.departures])
     pad_dir = max([len(d.direction) for d in response.departures])
     for departure in response.departures:
-        message += f"`{departure.line_name.ljust(pad_line)} {departure.direction.rjust(pad_dir)} {ceil(departure.departure/60)}`\n"
+        message += f"`{departure.line_name.rjust(pad_line)} {departure.direction.rjust(pad_dir)} {ceil(departure.departure/60)}`\n"
 
     keyboard = [
         [
@@ -141,7 +141,7 @@ def cb_departures_query(update: Update, context: CallbackContext, stop=None):
         time=time,
     )
     update.effective_chat.send_message(
-        message, parse_mode=ParseMode.MARKDOWN_V2, reply_markup=InlineKeyboardMarkup(keyboard)
+        message, parse_mode=ParseMode.MARKDOWN, reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 
@@ -150,7 +150,7 @@ def cb_departures_location(update: Update, context: CallbackContext):
     success, point = handle_stop_message(update)
     if success and point:
         message, keyboard = departures(point, favorites=context.user_data.get("favorites", []))
-        update.effective_message.reply_markdown_v2(
+        update.effective_message.reply_markdown(
             message,
             quote=True,
             reply_markup=InlineKeyboardMarkup(keyboard),

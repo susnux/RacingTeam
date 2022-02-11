@@ -72,17 +72,19 @@ def routes(start, end) -> tuple[str, Optional[list]]:
             message += f"\n`    `{icon} *{name}* _{direction}_" + (
                 f" ({sub.duration} min)" if sub.duration is not None else ""
             )
-            if sub_idx + 1 < len(route.partial_routes) and sub.stops:
+            if sub_idx + 1 < len(route.partial_routes):
                 next = route.partial_routes[sub_idx + 1]
-                message += f"\n`    `🔄 `{sub.stops[-1].name}" + (
-                    f" ({sub.stops[-1].place})`"
-                    if sub.stops[-1].place and sub.stops[-1].place != "Dresden"
-                    else "`"
-                )
-                if next.stops:
-                    if next.stops[0].platform:
-                        message += f", Steig {next.stops[0].platform.name}"
-                    message += f" ({round((next.stops[0].departure - sub.stops[-1].arrival).total_seconds() / 60)} min)"
+                if  sub.stops or next.stops:
+                    stop = sub.stops[-1] if sub.stops else next.stops[0]
+                    message += f"\n`    `🔄 `{stop.name}" + (
+                        f" ({stop.place})`"
+                        if stop.place and stop.place != "Dresden"
+                        else "`"
+                    )
+                    if next.stops:
+                        if next.stops[0].platform:
+                            message += f", Steig {next.stops[0].platform.name}"
+                        message += f" ({round((next.stops[0].departure - sub.stops[-1].arrival).total_seconds() / 60)} min)"
 
     return message, kb
     # for route in resp.routes[:min(NUMBER_ROUTES, len(resp.routes))]:

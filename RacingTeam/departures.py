@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from math import ceil
+from pydoc import resolve
 import vvo
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, Update
@@ -78,21 +81,15 @@ def departures(stop: vvo.Point, favorites, more=False, time=None):
     """
     if not stop.is_stop:
         raise ValueError("stop has to be as stop, not a point!")
-    limit = DEPARTURES_LIMIT
-    if more:
-        limit = limit = DEPARTURES_LIMIT_MAX
+
+    limit = DEPARTURES_LIMIT_MAX if more else DEPARTURES_LIMIT
     response = vvo.get_departures(stop, shorttermchanges=True, limit=limit, time=time)
-    response.more
+
     message = (
         f"Abfahrten für *{response.name}*"
         + (f" ({response.place})" if response.place and response.place != "Dresden" else "")
         + (f" _[{stop.shortcut}]_\n" if stop.shortcut else "\n")
     )
-    pad_line = max([len(d.line_name) for d in response.departures])
-    pad_dir = max([len(d.direction) for d in response.departures])
-    for departure in response.departures:
-        message += f"`{departure.line_name.rjust(pad_line)} {departure.direction.rjust(pad_dir)} {ceil(departure.departure/60)}`\n"
-
     keyboard = [
         [
             InlineKeyboardButton("📍 Standort", callback_data=(QueryTag.STOP_LOCATION, (stop.id,))),
@@ -100,29 +97,45 @@ def departures(stop: vvo.Point, favorites, more=False, time=None):
                 "⭐️ Favorit" if stop.id not in favorites else "🚫 Favorit entfernen",
                 callback_data=(QueryTag.STOP_FAVORITE, (stop.id,)),
             ),
-        ],
-        [
-            InlineKeyboardButton(
-                "🕓 Später",
-                callback_data=(
-                    QueryTag.DEPARTURE_LATER,
-                    (
-                        stop.id,
+        ]
+    ]
+
+    if not response.departures:
+        message += "Aktuell keine Abfahren."
+    else:
+        pad_line = max([len(d.line_name) for d in response.departures])
+        pad_dir = max([len(d.direction) for d in response.departures])
+        for departure in response.departures:
+            message += f"`{departure.line_name.rjust(pad_line)} {departure.direction.rjust(pad_dir)} {ceil(departure.departure/60)}`\n"
+
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    "🕓 Später",
+                    callback_data=(
+                        QueryTag.DEPARTURE_LATER,
                         (
-                            response.departures[-1].real_time or response.departures[-1].scheduled
-                        ).isoformat(),
+                            stop.id,
+                            (
+                                response.departures[-1].real_time
+                                or response.departures[-1].scheduled
+                            ).isoformat(),
+                        ),
                     ),
                 ),
-            ),
-            InlineKeyboardButton(
-                "➕ Mehr",
-                callback_data=(
-                    QueryTag.DEPARTURE_MORE,
-                    (stop.id,),
-                ),
-            ),
-        ],
-    ]
+            ]
+        )
+        if response.more:
+            keyboard[1].append(
+                InlineKeyboardButton(
+                    "➕ Mehr",
+                    callback_data=(
+                        QueryTag.DEPARTURE_MORE,
+                        (stop.id,),
+                    ),
+                )
+            )
+
     return message, keyboard
 
 

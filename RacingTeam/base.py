@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import vvo
 
 from enum import IntEnum

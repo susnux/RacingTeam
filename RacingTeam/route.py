@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import vvo
 from typing import Iterable, Optional
 from telegram import ChatAction, InlineKeyboardButton, InlineKeyboardMarkup, Update
